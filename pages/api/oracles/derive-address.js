@@ -1,4 +1,5 @@
-import { getOracleAddress } from '../../../utils/wallet-manager';
+import { validateOracleId } from '../../../utils/oracle-manager';
+import { deriveWalletAddress, getDerivationPath } from '../../../utils/wallet-manager';
 
 export default async function handler(req, res) {
   if (req.method !== 'POST') {
@@ -12,15 +13,33 @@ export default async function handler(req, res) {
       return res.status(400).json({ error: 'Oracle ID is required' });
     }
 
-    const address = await getOracleAddress(oracleId);
+    // Validate oracle ID format (but don't check if it exists yet)
+    if (typeof oracleId !== 'string' || oracleId.length < 3 || oracleId.length > 50) {
+      return res.status(400).json({ 
+        error: 'Oracle ID must be a string between 3 and 50 characters' 
+      });
+    }
 
-    res.status(200).json({
+    if (!/^[a-z0-9-_]+$/.test(oracleId)) {
+      return res.status(400).json({ 
+        error: 'Oracle ID can only contain lowercase letters, numbers, hyphens, and underscores' 
+      });
+    }
+
+    // Derive wallet for this oracle ID
+    const address = await deriveWalletAddress(oracleId);
+    const derivationPath = getDerivationPath(oracleId);
+
+    return res.status(200).json({
       oracleId,
-      address
+      address,
+      derivationPath
     });
 
   } catch (error) {
     console.error('Error deriving address:', error);
-    res.status(500).json({ error: error.message });
+    return res.status(500).json({ 
+      error: error.message || 'Internal server error' 
+    });
   }
 } 
