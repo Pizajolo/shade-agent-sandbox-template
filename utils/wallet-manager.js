@@ -71,7 +71,7 @@ function formatBalance(balance, decimals, decimalPlaces = 6) {
 }
 
 // Check if wallet has minimum balance
-export async function checkMinimumBalance(address, minAmount = 5) {
+export async function checkMinimumBalance(address, minAmount = 0.01) {
   try {
     const balanceInfo = await checkWalletBalance(address);
     const balanceValue = parseFloat(balanceInfo.formatted);

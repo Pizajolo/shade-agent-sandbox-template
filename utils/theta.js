@@ -5,8 +5,10 @@ import { signWithAgent, getAgentAccount } from '@neardefi/shade-agent-js';
 
 const { toRSV } = utils.cryptography;
 
-export const thetaTestnetRpcUrl = 'https://eth-rpc-api-testnet.thetatoken.org/rpc';
-export const oracleContractAddress = '0x0f11e94e727E255f6c00b8932B277B4474004c09';
+const contractId = process.env.NEXT_PUBLIC_contractId;
+
+export const thetaTestnetRpcUrl = 'https://sepolia.drpc.org';
+export const oracleContractAddress = '0x4F245168CF00D236d67646d4F222F41EF4D0E71F';
 
 export const oracleContractAbi = [
 	{
@@ -308,83 +310,6 @@ export const Evm = (new chainAdapters.evm.EVM({
     contract: MPC_CONTRACT
 }));
 
-// Override attachGasAndNonce to avoid EIP-1559 fees and use legacy gasPrice
-Evm.attachGasAndNonce = async function (transaction) {
-  console.log("transaction attachGasAndNonceLegacy", transaction);
-  const gasPrice = await this.client.getGasPrice();
-  const nonce = await this.client.getTransactionCount({
-    address: transaction.from,
-  });
-
-  const { from, ...rest } = transaction;
-
-  // Estimate gas if not provided
-  let gasLimit = BigInt(21000); // Default for simple transfers
-  if (!rest.gas && rest.data) {
-    try {
-      const estimatedGas = await this.client.estimateGas(transaction);
-      gasLimit = BigInt(Math.floor(Number(estimatedGas) * 1.2)); // Add 20% buffer
-      console.log(`Estimated gas: ${estimatedGas}, using: ${gasLimit}`);
-    } catch (error) {
-      console.log('Gas estimation failed, using default:', error.message);
-      gasLimit = BigInt(200000); // Higher default for contract calls
-    }
-  } else if (rest.gas) {
-    gasLimit = BigInt(rest.gas);
-  }
-
-  return {
-    ...rest,
-    gasPrice: BigInt(gasPrice),
-    nonce: BigInt(nonce),
-    value: rest.value !== undefined ? BigInt(rest.value) : BigInt(0),
-    gas: gasLimit,
-    chainId: await this.client.getChainId(),
-    type: 'legacy',
-  };
-};
-
-// Override prepareTransactionForSigning globally
-Evm.prepareTransactionForSigning = async function (transactionRequest) {
-  console.log("transaction prepareTransactionForSigning", transactionRequest);
-  const transaction = await this.attachGasAndNonce(transactionRequest);
-  const serializedTx = serializeTransaction(transaction); // uses legacy format now
-  const txHash = toBytes(keccak256(serializedTx));
-
-  return {
-    transaction,
-    hashesToSign: [Array.from(txHash)],
-  };
-};
-
-// Override finalizeTransactionSigning to work with Theta
-Evm.finalizeTransactionSigning = function ({
-  transaction,
-  rsvSignatures,
-}) {
-  console.log("transaction finalizeTransactionSigning", transaction, rsvSignatures);
-  // Ensure legacy transaction format
-  const txLegacy = {
-    to: transaction.to,
-    value: BigInt(transaction.value || 0), // Handle undefined value
-    gas: BigInt(transaction.gas || transaction.gasLimit),
-    nonce: BigInt(transaction.nonce),
-    // gasLimit: BigInt(transaction.gas || transaction.gasLimit),
-    gasPrice: BigInt(transaction.gasPrice),
-    chainId: Number(transaction.chainId),
-    type: 'legacy',
-  };
-
-  // Use v, not yParity
-  const signature = {
-    v: BigInt(rsvSignatures[0].v),
-    r: `0x${rsvSignatures[0].r.padStart(64, '0')}`,
-    s: `0x${rsvSignatures[0].s.padStart(64, '0')}`,
-  };
-
-  return serializeTransaction(txLegacy, signature);
-};
-
 const provider = new JsonRpcProvider(thetaTestnetRpcUrl);
 const contract = new Contract(oracleContractAddress, oracleContractAbi, provider);
 
@@ -420,9 +345,11 @@ export async function createOracle(oracleIdString, initialValue, description, de
   
   // Get the address for this derivation path
   const { address: senderAddress } = await Evm.deriveAddressAndPublicKey(
-    workerAccountId,
+    contractId,
     derivationPath
   );
+
+  console.log('Sender address:', senderAddress);
 
 
   
