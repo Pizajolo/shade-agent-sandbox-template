@@ -80,7 +80,7 @@ Build a web-based system to manage multiple oracles through a modern Next.js int
 
 ### 4. Updated Implementation Order
 
-#### Sprint 1: Backend Foundation (Days 1-2)
+#### Sprint 1: Backend Foundation (Hours 3-4)
 1. **Oracle Management Utilities** (`utils/oracle-manager.js`)
    - `loadOracleConfigs()`, `saveOracleConfigs()`, `addOracleConfig()`
    - `validateOracleId()`, `validateApiEndpoint()`, `validateDataPath()`
@@ -94,7 +94,7 @@ Build a web-based system to manage multiple oracles through a modern Next.js int
    - `GET /api/oracles/list`
    - `POST /api/oracles/derive-address`
 
-#### Sprint 2: Oracle Creation Flow (Days 3-4)
+#### Sprint 2: Oracle Creation Flow (Hours 3-4)
 1. **Oracle Creation API** (`pages/api/oracles/create.js`)
    - Validate inputs, test API, create oracle, save config
 
@@ -107,7 +107,7 @@ Build a web-based system to manage multiple oracles through a modern Next.js int
    - Basic oracle list display
    - Integration with creation wizard
 
-#### Sprint 3: Data Processing & Updates (Days 5-6)
+#### Sprint 3: Data Processing & Updates (Hours 2-3)
 1. **Data Fetching System** (`utils/data-fetcher.js`)
    - `fetchApiData()`, `extractValueSimple()`, `validateExtractedValue()`
 
@@ -120,10 +120,11 @@ Build a web-based system to manage multiple oracles through a modern Next.js int
    - Manual update buttons
    - Balance monitoring
 
-#### Sprint 4: Background Service & Automation (Days 7-8)
+#### Sprint 4: Background Service & Automation (Hours 1-3)
 1. **Scheduler System** (`utils/scheduler.js`)
    - `calculateNextUpdate()`, `getOraclesDueForUpdate()`, `executeOracleUpdate()`
 
+#### Sprint 5: Others
 2. **Background Service** (`oracle-service.js`)
    - Automated update cycle
    - Balance monitoring

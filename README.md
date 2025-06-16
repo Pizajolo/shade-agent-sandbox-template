@@ -1,11 +1,66 @@
-# Shade Agent Template
+# Shade Agent - Dynamic Oracle System
 
 > [!WARNING]  
 > This technology has not yet undergone a formal audit. Use at your own risk. Please conduct your own due diligence and exercise caution before integrating or relying on it in production environments.
 
-This is a monorepo template for the Shade Agent Sadnbox with all the code and tools for deploying a Shade Agent on NEAR and Phala Cloud.
+This is a monorepo for an advanced Shade Agent Oracle system that provides a dynamic, configurable solution for bringing off-chain data on-chain through NEAR and Phala Cloud.
 
-This template is a simple verifiable ETH Price Oracle that pushes prices to an Ethereum contract. 
+## What This Oracle Does
+
+This system provides a **Dynamic API Oracle** that goes beyond simple price feeds. Key features include:
+
+### 🚀 **Dynamic Endpoint Management**
+- **Smart contract interface** for dynamically adding API endpoints without code changes
+- **Flexible data extraction** - specify exactly which fields from API responses should be captured
+- **Runtime configuration** - no need to redeploy contracts when adding new data sources
+
+### ⚡ **Automated Updates**
+- **Gas-powered automation** - updates continue as long as gas tokens are available in your oracle's derived wallet address
+- **Configurable intervals** - set update frequency in minutes based on your needs
+- **Reliable execution** - runs in a secure TEE (Trusted Execution Environment)
+
+### 🎯 **Smart Data Handling**
+- **Selective data extraction** from complex API responses
+- **On-chain data provision** for smart contracts and dApps
+- **Verifiable oracle operations** through Shade Agent technology
+
+### 💰 **Cost Management**
+- **Pay-per-use model** - oracle operates using gas from your derived wallet
+- **Transparent costs** - you control when and how often data updates occur
+- **No subscription fees** - only pay for the gas you consume
+
+## Current Capabilities
+
+- ✅ Dynamic API endpoint registration through smart contract
+- ✅ Configurable data field extraction from JSON responses  
+- ✅ Automated periodic updates with customizable intervals
+- ✅ Gas-managed operation lifecycle
+- ✅ Secure TEE-based execution on Phala Cloud
+- ✅ NEAR blockchain integration
+
+## Roadmap & Next Steps
+
+### 🔧 **Stability & Reliability**
+- Enhanced error handling and retry mechanisms
+- Better monitoring and alerting for oracle health
+- Improved gas estimation and management
+
+### 📊 **Extended Data Support**
+- Support for non-numeric data types (strings, arrays, objects)
+- Complex data transformation capabilities
+
+### 🔐 **Advanced API Integration**
+- API key authentication support
+- OAuth and other authentication methods
+- Rate limiting and request management
+
+### 🛡️ **Redundancy & Security**
+- Multi-source and Redundant data verification
+
+### 🌐 **Blockchain Expansion**
+- **Theta Blockchain integration** - primary target for next release
+
+[Pull request for chainsig.js adding Theta Support](https://github.com/NearDeFi/chainsig.js/pull/9)
 
 For full instructions on this repository please refer to our [docs](https://docs.near.org/ai/shade-agents/sandbox/sandbox-deploying).
 
