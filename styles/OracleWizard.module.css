@@ -1,0 +1,406 @@
+/* Modal overlay that covers the entire screen */
+.overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  padding: 20px;
+  box-sizing: border-box;
+}
+
+.wizard {
+  max-width: 600px;
+  width: 100%;
+  max-height: 90vh;
+  background: white;
+  border-radius: 12px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+.header {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  padding: 24px;
+  text-align: center;
+}
+
+.header h2 {
+  margin: 0 0 16px 0;
+  font-size: 1.5rem;
+  font-weight: 600;
+}
+
+.progress {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+}
+
+.progressBar {
+  width: 100%;
+  height: 4px;
+  background: rgba(255, 255, 255, 0.3);
+  border-radius: 2px;
+  overflow: hidden;
+}
+
+.progressFill {
+  height: 100%;
+  background: white;
+  transition: width 0.3s ease;
+}
+
+.content {
+  padding: 32px;
+  min-height: 400px;
+  flex: 1;
+  overflow-y: auto;
+}
+
+.step h3 {
+  margin: 0 0 24px 0;
+  color: #1f2937;
+  font-size: 1.25rem;
+}
+
+.field {
+  margin-bottom: 24px;
+}
+
+.field label {
+  display: block;
+  margin-bottom: 8px;
+  font-weight: 600;
+  color: #374151;
+}
+
+.field input,
+.field textarea {
+  width: 100%;
+  padding: 12px;
+  border: 2px solid #e5e7eb;
+  border-radius: 8px;
+  font-size: 1rem;
+  transition: border-color 0.2s;
+  box-sizing: border-box;
+}
+
+.field input:focus,
+.field textarea:focus {
+  outline: none;
+  border-color: #667eea;
+}
+
+.field textarea {
+  min-height: 80px;
+  resize: vertical;
+}
+
+.field small {
+  display: block;
+  margin-top: 4px;
+  color: #6b7280;
+  font-size: 0.875rem;
+}
+
+.error {
+  border-color: #dc2626 !important;
+}
+
+.errorText {
+  color: #dc2626;
+  font-size: 0.875rem;
+  margin-top: 4px;
+  display: block;
+}
+
+.testButton {
+  background: #10b981;
+  color: white;
+  border: none;
+  padding: 12px 24px;
+  border-radius: 8px;
+  font-size: 1rem;
+  cursor: pointer;
+  transition: all 0.2s;
+  margin-top: 16px;
+}
+
+.testButton:hover:not(:disabled) {
+  background: #059669;
+  transform: translateY(-1px);
+}
+
+.testButton:disabled {
+  background: #9ca3af;
+  cursor: not-allowed;
+  transform: none;
+}
+
+.apiResult {
+  background: #d1fae5;
+  border: 1px solid #a7f3d0;
+  border-radius: 8px;
+  padding: 16px;
+  margin-top: 16px;
+}
+
+.apiResult h4 {
+  margin: 0 0 12px 0;
+  color: #065f46;
+}
+
+.apiResult p {
+  margin: 8px 0;
+  color: #065f46;
+}
+
+.apiResult details {
+  margin-top: 12px;
+}
+
+.apiResult summary {
+  cursor: pointer;
+  font-weight: 600;
+  color: #047857;
+}
+
+.apiResult pre {
+  background: #f3f4f6;
+  padding: 12px;
+  border-radius: 6px;
+  font-size: 0.875rem;
+  overflow-x: auto;
+  margin-top: 8px;
+}
+
+.walletInfo {
+  text-align: center;
+}
+
+.walletInfo h4 {
+  margin: 0 0 16px 0;
+  color: #1f2937;
+}
+
+.addressBox {
+  background: #f3f4f6;
+  border: 1px solid #d1d5db;
+  border-radius: 8px;
+  padding: 16px;
+  margin-bottom: 20px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.addressBox code {
+  flex: 1;
+  font-family: 'Monaco', 'Menlo', monospace;
+  font-size: 0.875rem;
+  color: #374151;
+  word-break: break-all;
+}
+
+.copyButton {
+  background: #6b7280;
+  color: white;
+  border: none;
+  padding: 6px 12px;
+  border-radius: 4px;
+  font-size: 0.875rem;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.copyButton:hover {
+  background: #4b5563;
+}
+
+.fundingInstructions {
+  background: #fef3c7;
+  border: 1px solid #f59e0b;
+  border-radius: 8px;
+  padding: 16px;
+  text-align: left;
+}
+
+.fundingInstructions p {
+  margin: 8px 0;
+  color: #92400e;
+}
+
+.link {
+  color: #2563eb;
+  text-decoration: none;
+  font-weight: 600;
+}
+
+.link:hover {
+  text-decoration: underline;
+}
+
+.loading {
+  text-align: center;
+  color: #6b7280;
+  padding: 40px;
+}
+
+.fundingCheck {
+  margin-top: 20px;
+  text-align: center;
+}
+
+.fundingResult {
+  background: #f3f4f6;
+  border: 1px solid #d1d5db;
+  border-radius: 8px;
+  padding: 16px;
+  margin-top: 12px;
+  text-align: left;
+}
+
+.fundingResult.funded {
+  background: #d1fae5;
+  border-color: #a7f3d0;
+  color: #065f46;
+}
+
+.fundingResult.needsFunding {
+  background: #fee2e2;
+  border-color: #fca5a5;
+  color: #991b1b;
+}
+
+.fundingResult p {
+  margin: 4px 0;
+}
+
+.summary {
+  background: #f9fafb;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  padding: 20px;
+}
+
+.summary h4 {
+  margin: 0 0 16px 0;
+  color: #1f2937;
+}
+
+.summaryItem {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 8px 0;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+.summaryItem:last-child {
+  border-bottom: none;
+}
+
+.summaryItem strong {
+  color: #374151;
+}
+
+.actions {
+  background: #f9fafb;
+  padding: 24px;
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.backButton,
+.cancelButton,
+.nextButton,
+.createButton {
+  padding: 12px 24px;
+  border: none;
+  border-radius: 8px;
+  font-size: 1rem;
+  cursor: pointer;
+  transition: all 0.2s;
+  font-weight: 600;
+}
+
+.backButton {
+  background: #f3f4f6;
+  color: #374151;
+}
+
+.backButton:hover:not(:disabled) {
+  background: #e5e7eb;
+}
+
+.cancelButton {
+  background: #fee2e2;
+  color: #991b1b;
+}
+
+.cancelButton:hover:not(:disabled) {
+  background: #fecaca;
+}
+
+.nextButton {
+  background: #3b82f6;
+  color: white;
+}
+
+.nextButton:hover:not(:disabled) {
+  background: #2563eb;
+}
+
+.createButton {
+  background: #10b981;
+  color: white;
+}
+
+.createButton:hover:not(:disabled) {
+  background: #059669;
+}
+
+.backButton:disabled,
+.cancelButton:disabled,
+.nextButton:disabled,
+.createButton:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  transform: none;
+}
+
+@media (max-width: 768px) {
+  .overlay {
+    padding: 10px;
+  }
+
+  .wizard {
+    max-width: none;
+    max-height: 95vh;
+    border-radius: 8px;
+  }
+  
+  .content {
+    padding: 24px;
+  }
+  
+  .actions {
+    flex-wrap: wrap;
+  }
+  
+  .actions button {
+    flex: 1;
+    min-width: 120px;
+  }
+} 

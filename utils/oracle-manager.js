@@ -1,17 +1,30 @@
 import fs from 'fs';
 import path from 'path';
 
+// ============================================================================
+// CONFIGURATION
+// ============================================================================
+
 const DATA_DIR = path.join(process.cwd(), 'data');
 const ORACLES_FILE = path.join(DATA_DIR, 'oracles.json');
 
-// Ensure data directory exists
+// ============================================================================
+// FILE SYSTEM UTILITIES
+// ============================================================================
+
+/**
+ * Ensure the data directory exists for storing oracle configurations
+ */
 function ensureDataDirectory() {
   if (!fs.existsSync(DATA_DIR)) {
     fs.mkdirSync(DATA_DIR, { recursive: true });
   }
 }
 
-// Load oracle configurations from JSON file
+/**
+ * Load all oracle configurations from JSON file
+ * @returns {Object} Oracle configurations keyed by oracle ID
+ */
 export function loadOracleConfigs() {
   try {
     ensureDataDirectory();
@@ -28,12 +41,16 @@ export function loadOracleConfigs() {
   }
 }
 
-// Save oracle configurations to JSON file
+/**
+ * Save oracle configurations to JSON file with automatic backup
+ * @param {Object} configs - Oracle configurations to save
+ * @returns {boolean} True if save was successful
+ */
 export function saveOracleConfigs(configs) {
   try {
     ensureDataDirectory();
     
-    // Create backup before saving
+    // Create backup before saving (safety measure)
     if (fs.existsSync(ORACLES_FILE)) {
       const backupFile = `${ORACLES_FILE}.backup.${Date.now()}`;
       fs.copyFileSync(ORACLES_FILE, backupFile);
@@ -47,7 +64,16 @@ export function saveOracleConfigs(configs) {
   }
 }
 
-// Add new oracle configuration
+// ============================================================================
+// ORACLE CONFIGURATION MANAGEMENT
+// ============================================================================
+
+/**
+ * Add a new oracle configuration
+ * @param {Object} oracleData - Oracle configuration data
+ * @returns {boolean} True if oracle was added successfully
+ * @throws {Error} If oracle ID already exists
+ */
 export function addOracleConfig(oracleData) {
   try {
     const configs = loadOracleConfigs();
@@ -56,6 +82,7 @@ export function addOracleConfig(oracleData) {
       throw new Error(`Oracle with ID '${oracleData.name}' already exists`);
     }
     
+    // Add metadata and default status fields
     configs[oracleData.name] = {
       ...oracleData,
       createdAt: new Date().toISOString(),
@@ -73,7 +100,13 @@ export function addOracleConfig(oracleData) {
   }
 }
 
-// Update existing oracle configuration
+/**
+ * Update an existing oracle configuration
+ * @param {string} oracleId - Oracle ID to update
+ * @param {Object} updates - Fields to update
+ * @returns {boolean} True if update was successful
+ * @throws {Error} If oracle doesn't exist
+ */
 export function updateOracleConfig(oracleId, updates) {
   try {
     const configs = loadOracleConfigs();
@@ -94,7 +127,11 @@ export function updateOracleConfig(oracleId, updates) {
   }
 }
 
-// Get single oracle configuration
+/**
+ * Get a single oracle configuration
+ * @param {string} oracleId - Oracle ID to retrieve
+ * @returns {Object|null} Oracle configuration or null if not found
+ */
 export function getOracleConfig(oracleId) {
   try {
     const configs = loadOracleConfigs();
@@ -105,8 +142,31 @@ export function getOracleConfig(oracleId) {
   }
 }
 
-// Validate oracle ID
+/**
+ * Get all oracle IDs
+ * @returns {string[]} Array of oracle IDs
+ */
+export function getAllOracleIds() {
+  try {
+    const configs = loadOracleConfigs();
+    return Object.keys(configs);
+  } catch (error) {
+    console.error('Error getting oracle IDs:', error);
+    return [];
+  }
+}
+
+// ============================================================================
+// VALIDATION FUNCTIONS
+// ============================================================================
+
+/**
+ * Validate oracle ID format and uniqueness
+ * @param {string} oracleId - Oracle ID to validate
+ * @returns {Object} {valid: boolean, error?: string}
+ */
 export function validateOracleId(oracleId) {
+  // Check basic format requirements
   if (!oracleId || typeof oracleId !== 'string') {
     return { valid: false, error: 'Oracle ID must be a non-empty string' };
   }
@@ -115,10 +175,12 @@ export function validateOracleId(oracleId) {
     return { valid: false, error: 'Oracle ID must be between 3 and 50 characters' };
   }
   
+  // Only allow URL-safe characters
   if (!/^[a-z0-9-_]+$/.test(oracleId)) {
     return { valid: false, error: 'Oracle ID can only contain lowercase letters, numbers, hyphens, and underscores' };
   }
   
+  // Check uniqueness
   const configs = loadOracleConfigs();
   if (configs[oracleId]) {
     return { valid: false, error: 'Oracle ID already exists' };
@@ -127,7 +189,11 @@ export function validateOracleId(oracleId) {
   return { valid: true };
 }
 
-// Validate API endpoint
+/**
+ * Validate API endpoint accessibility and response format
+ * @param {string} endpoint - API endpoint URL to validate
+ * @returns {Object} {valid: boolean, error?: string, data?: Object}
+ */
 export async function validateApiEndpoint(endpoint) {
   try {
     if (!endpoint || typeof endpoint !== 'string') {
@@ -138,7 +204,7 @@ export async function validateApiEndpoint(endpoint) {
       return { valid: false, error: 'API endpoint must start with http:// or https://' };
     }
     
-    // Test the endpoint
+    // Test endpoint accessibility
     const response = await fetch(endpoint, { 
       method: 'GET',
       headers: { 'Accept': 'application/json' },
@@ -156,14 +222,19 @@ export async function validateApiEndpoint(endpoint) {
   }
 }
 
-// Validate data path with actual API data
+/**
+ * Validate data path against actual API response
+ * @param {string} endpoint - API endpoint to test against
+ * @param {string} dataPath - Dot notation path to extract value
+ * @returns {Object} {valid: boolean, error?: string, value?: number}
+ */
 export async function validateDataPath(endpoint, dataPath) {
   try {
     if (!dataPath || typeof dataPath !== 'string') {
       return { valid: false, error: 'Data path must be a non-empty string' };
     }
     
-    // Validate endpoint first
+    // First validate the endpoint
     const endpointValidation = await validateApiEndpoint(endpoint);
     if (!endpointValidation.valid) {
       return endpointValidation;
@@ -171,14 +242,14 @@ export async function validateDataPath(endpoint, dataPath) {
     
     const data = endpointValidation.data;
     
-    // Extract value using simple dot notation
+    // Extract value using dot notation path
     const value = extractValueFromPath(data, dataPath);
     
     if (value === undefined || value === null) {
       return { valid: false, error: `Data path '${dataPath}' not found in API response` };
     }
     
-    // Handle string numbers (common with APIs)
+    // Convert to number if it's a string
     let numericValue = value;
     if (typeof value === 'string') {
       numericValue = parseFloat(value);
@@ -195,9 +266,17 @@ export async function validateDataPath(endpoint, dataPath) {
   }
 }
 
-// Extract value from object using simple dot notation
+// ============================================================================
+// HELPER FUNCTIONS
+// ============================================================================
+
+/**
+ * Extract value from nested object using dot notation path
+ * @param {Object} obj - Object to extract from
+ * @param {string} path - Dot notation path (e.g., "data.price")
+ * @returns {*} Extracted value or undefined if path not found
+ */
 function extractValueFromPath(obj, path) {
-    console.log(obj, path);
   try {
     const keys = path.split('.');
     let value = obj;
@@ -212,16 +291,5 @@ function extractValueFromPath(obj, path) {
     return value;
   } catch (error) {
     return undefined;
-  }
-}
-
-// Get all oracle IDs
-export function getAllOracleIds() {
-  try {
-    const configs = loadOracleConfigs();
-    return Object.keys(configs);
-  } catch (error) {
-    console.error('Error getting oracle IDs:', error);
-    return [];
   }
 }

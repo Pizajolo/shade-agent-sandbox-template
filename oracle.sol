@@ -63,9 +63,9 @@ contract SimpleOracle {
             revert OracleNotExists();
         }
         
-        if (oracle.creator != msg.sender) {
-            revert OnlyCreatorCanUpdate();
-        }
+        // if (oracle.creator != msg.sender) {
+        //     revert OnlyCreatorCanUpdate();
+        // }
         
         oracle.value = newValue;
         oracle.lastUpdateBlock = block.number;

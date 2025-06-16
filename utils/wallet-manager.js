@@ -1,176 +1,103 @@
-import { Evm } from './theta';
-import { getAgentAccount } from '@neardefi/shade-agent-js';
+import { Evm } from './theta.js';
 
-const contractId = process.env.NEXT_PUBLIC_contractId;
+// ============================================================================
+// CONFIGURATION
+// ============================================================================
 
-// Derive oracle wallet from oracle ID
-export async function deriveOracleWallet(oracleId) {
+// MPC contract configuration for Shade Agent wallet operations
+const contractId = process.env.NEXT_PUBLIC_contractId || `v1.signer-prod.testnet`;
+
+// ============================================================================
+// WALLET OPERATIONS
+// ============================================================================
+
+/**
+ * Generate a deterministic wallet address from an oracle ID
+ * This ensures each oracle has a unique but reproducible wallet address
+ * @param {string} oracleId - Oracle identifier (e.g., "eth-price")
+ * @returns {Promise<string>} Ethereum wallet address
+ */
+export async function deriveWalletAddress(oracleId) {
   try {
-    const { workerAccountId } = await getAgentAccount();
-    const derivationPath = oracleId; // Use oracle ID as derivation path
-    
-    const { address, publicKey } = await Evm.deriveAddressAndPublicKey(
+    const derivationPath = oracleId; // Use oracle ID directly as derivation path
+    const { address } = await Evm.deriveAddressAndPublicKey(
       contractId,
       derivationPath
     );
-    
-    return {
-      address,
-      publicKey,
-      derivationPath,
-      oracleId
-    };
+    return address;
   } catch (error) {
-    console.error('Error deriving oracle wallet:', error);
-    throw error;
+    console.error('Error deriving wallet address:', error);
+    throw new Error(`Failed to derive wallet address for oracle ${oracleId}`);
   }
 }
 
-// Get oracle address from oracle ID
-export async function getOracleAddress(oracleId) {
+/**
+ * Get the current ETH balance of an oracle's wallet
+ * @param {string} oracleId - Oracle identifier
+ * @returns {Promise<BigInt>} Wallet balance in Wei (1 ETH = 10^18 Wei)
+ */
+export async function getWalletBalance(oracleId) {
   try {
-    const wallet = await deriveOracleWallet(oracleId);
-    return wallet.address;
+    const address = await deriveWalletAddress(oracleId);
+    const balance = await Evm.getBalance(address);
+    return balance;
   } catch (error) {
-    console.error('Error getting oracle address:', error);
-    throw error;
+    console.error('Error getting wallet balance:', error);
+    throw new Error(`Failed to get wallet balance for oracle ${oracleId}`);
   }
 }
 
-// Check wallet balance
-export async function checkWalletBalance(address) {
+/**
+ * Generate the derivation path for an oracle's wallet
+ * This path is used by Shade Agent to derive private keys
+ * @param {string} oracleId - Oracle identifier
+ * @returns {string} Derivation path (just the oracle ID)
+ */
+export function getDerivationPath(oracleId) {
+  return oracleId; // Use oracle ID directly as derivation path
+}
+
+/**
+ * Check if an oracle's wallet has sufficient balance for operations
+ * Minimum balance required is 0.01 ETH to cover gas costs
+ * @param {string} oracleId - Oracle identifier
+ * @returns {Promise<boolean>} True if wallet has sufficient balance
+ */
+export async function checkSufficientBalance(oracleId) {
   try {
-    const balanceInfo = await Evm.getBalance(address);
-    return {
-      address,
-      balance: balanceInfo.balance,
-      decimals: balanceInfo.decimals,
-      formatted: formatBalance(balanceInfo.balance, balanceInfo.decimals)
-    };
+    const balance = await getWalletBalance(oracleId);
+    // 0.01 ETH = 10^16 Wei (minimum required balance)
+    const minimumBalance = BigInt('10000000000000000');
+    return balance >= minimumBalance;
   } catch (error) {
     console.error('Error checking wallet balance:', error);
-    throw error;
+    return false;
   }
 }
 
-// Format balance for display
-function formatBalance(balance, decimals, decimalPlaces = 6) {
+/**
+ * Get wallet information for an oracle including address and balance
+ * @param {string} oracleId - Oracle identifier
+ * @returns {Promise<Object>} Wallet info: {address, balance, hasSufficientBalance}
+ */
+export async function getWalletInfo(oracleId) {
   try {
-    let strValue = balance.toString();
-    
-    if (strValue.length <= decimals) {
-      strValue = strValue.padStart(decimals + 1, '0');
-    }
-
-    const decimalPos = strValue.length - decimals;
-    const result = strValue.slice(0, decimalPos) + '.' + strValue.slice(decimalPos);
-    
-    return parseFloat(result).toFixed(decimalPlaces);
-  } catch (error) {
-    console.error('Error formatting balance:', error);
-    return '0.000000';
-  }
-}
-
-// Check if wallet has minimum balance
-export async function checkMinimumBalance(address, minAmount = 5) {
-  try {
-    const balanceInfo = await checkWalletBalance(address);
-    const balanceValue = parseFloat(balanceInfo.formatted);
+    const address = await deriveWalletAddress(oracleId);
+    const balance = await getWalletBalance(oracleId);
+    const hasSufficientBalance = await checkSufficientBalance(oracleId);
     
     return {
       address,
-      balance: balanceValue,
-      minAmount,
-      hasMinimum: balanceValue >= minAmount,
-      shortfall: balanceValue < minAmount ? minAmount - balanceValue : 0
+      balance,
+      hasSufficientBalance
     };
   } catch (error) {
-    console.error('Error checking minimum balance:', error);
-    throw error;
+    console.error('Error getting wallet info:', error);
+    throw new Error(`Failed to get wallet info for oracle ${oracleId}`);
   }
 }
 
-// Wait for wallet to be funded (polling)
-export async function waitForFunding(address, minAmount = 5, maxWaitTime = 300000) { // 5 minutes
-  const startTime = Date.now();
-  const pollInterval = 5000; // 5 seconds
-  
-  return new Promise((resolve, reject) => {
-    const poll = async () => {
-      try {
-        const balanceCheck = await checkMinimumBalance(address, minAmount);
-        
-        if (balanceCheck.hasMinimum) {
-          resolve(balanceCheck);
-          return;
-        }
-        
-        if (Date.now() - startTime > maxWaitTime) {
-          reject(new Error(`Timeout waiting for funding. Current balance: ${balanceCheck.balance} TFUEL`));
-          return;
-        }
-        
-        setTimeout(poll, pollInterval);
-      } catch (error) {
-        reject(error);
-      }
-    };
-    
-    poll();
-  });
-}
 
-// Monitor balances for multiple oracles
-export async function monitorBalances(oracleIds, minAmount = 5) {
-  try {
-    const results = await Promise.allSettled(
-      oracleIds.map(async (oracleId) => {
-        const address = await getOracleAddress(oracleId);
-        const balanceCheck = await checkMinimumBalance(address, minAmount);
-        return {
-          oracleId,
-          ...balanceCheck
-        };
-      })
-    );
-    
-    const balances = [];
-    const errors = [];
-    
-    results.forEach((result, index) => {
-      if (result.status === 'fulfilled') {
-        balances.push(result.value);
-      } else {
-        errors.push({
-          oracleId: oracleIds[index],
-          error: result.reason.message
-        });
-      }
-    });
-    
-    return { balances, errors };
-  } catch (error) {
-    console.error('Error monitoring balances:', error);
-    throw error;
-  }
-}
 
-// Get oracle wallet info (address + balance)
-export async function getOracleWalletInfo(oracleId) {
-  try {
-    const wallet = await deriveOracleWallet(oracleId);
-    const balanceInfo = await checkWalletBalance(wallet.address);
-    
-    return {
-      oracleId,
-      address: wallet.address,
-      balance: balanceInfo.formatted,
-      balanceRaw: balanceInfo.balance,
-      decimals: balanceInfo.decimals
-    };
-  } catch (error) {
-    console.error('Error getting oracle wallet info:', error);
-    throw error;
-  }
-}
+
+
