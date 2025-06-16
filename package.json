@@ -15,6 +15,7 @@
         "chainsig.js": "1.1.6",
         "dotenv": "^16.5.0",
         "ethers": "^6.11.1",
+        "fs-extra": "^11.1.1",
         "https-browserify": "^1.0.0",
         "next": "latest",
         "os-browserify": "^0.3.0",

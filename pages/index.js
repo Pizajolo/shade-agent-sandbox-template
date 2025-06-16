@@ -2,7 +2,7 @@ import Head from 'next/head';
 import styles from '../styles/Home.module.css';
 import { useState, useEffect } from 'react';
 import Overlay from '../components/Overlay';
-import { Evm, getContractPrice, convertToDecimal } from '../utils/ethereum';
+import { Evm, convertToDecimal, getContractPrice } from '../utils/theta';
 
 const contractId = process.env.NEXT_PUBLIC_contractId;
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));

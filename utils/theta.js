@@ -1,9 +1,12 @@
-import { contracts, chainAdapters } from "chainsig.js";
-import { createPublicClient, http, serializeTransaction, toBytes, keccak256 } from "viem";
+import { contracts, chainAdapters, utils } from "chainsig.js";
+import { createPublicClient, http, serializeTransaction, toBytes, keccak256, recoverTransactionAddress, recoverAddress } from "viem";
 import { Contract, JsonRpcProvider } from "ethers";
+import { signWithAgent, getAgentAccount } from '@neardefi/shade-agent-js';
+
+const { toRSV } = utils.cryptography;
 
 export const thetaTestnetRpcUrl = 'https://eth-rpc-api-testnet.thetatoken.org/rpc';
-export const oracleContractAddress = '0x0f11e94e727e255f6c00b8932b277b4474004c09';
+export const oracleContractAddress = '0x0f11e94e727E255f6c00b8932B277B4474004c09';
 
 export const oracleContractAbi = [
 	{
@@ -315,12 +318,27 @@ Evm.attachGasAndNonce = async function (transaction) {
 
   const { from, ...rest } = transaction;
 
+  // Estimate gas if not provided
+  let gasLimit = BigInt(21000); // Default for simple transfers
+  if (!rest.gas && rest.data) {
+    try {
+      const estimatedGas = await this.client.estimateGas(transaction);
+      gasLimit = BigInt(Math.floor(Number(estimatedGas) * 1.2)); // Add 20% buffer
+      console.log(`Estimated gas: ${estimatedGas}, using: ${gasLimit}`);
+    } catch (error) {
+      console.log('Gas estimation failed, using default:', error.message);
+      gasLimit = BigInt(200000); // Higher default for contract calls
+    }
+  } else if (rest.gas) {
+    gasLimit = BigInt(rest.gas);
+  }
+
   return {
     ...rest,
     gasPrice: BigInt(gasPrice),
     nonce: BigInt(nonce),
-    value: rest.value !== undefined ? BigInt(rest.value) : undefined,
-    gas: rest.gas !== undefined ? BigInt(rest.gas) : BigInt(21000),
+    value: rest.value !== undefined ? BigInt(rest.value) : BigInt(0),
+    gas: gasLimit,
     chainId: await this.client.getChainId(),
     type: 'legacy',
   };
@@ -348,7 +366,7 @@ Evm.finalizeTransactionSigning = function ({
   // Ensure legacy transaction format
   const txLegacy = {
     to: transaction.to,
-    value: BigInt(transaction.value),
+    value: BigInt(transaction.value || 0), // Handle undefined value
     gas: BigInt(transaction.gas || transaction.gasLimit),
     nonce: BigInt(transaction.nonce),
     // gasLimit: BigInt(transaction.gas || transaction.gasLimit),
@@ -394,19 +412,29 @@ function stringToBytes32(str) {
 }
 
 // Create a new oracle
-export async function createOracle(oracleIdString, initialValue, description, signerAddress) {
+export async function createOracle(oracleIdString, initialValue, description, derivationPath) {
   const oracleId = stringToBytes32(oracleIdString);
   
-  const transaction = {
-    to: oracleContractAddress,
-    from: signerAddress,
-    data: contract.interface.encodeFunctionData('createOracle', [oracleId, initialValue, description]),
-  };
+  // Get the worker account ID (same as wallet-manager.js)
+  const { workerAccountId } = await getAgentAccount();
+  
+  // Get the address for this derivation path
+  const { address: senderAddress } = await Evm.deriveAddressAndPublicKey(
+    workerAccountId,
+    derivationPath
+  );
 
-  return await Evm.signAndSendTransaction({
-    transaction,
-    signerAddress,
+
+  
+  const data = contract.interface.encodeFunctionData('createOracle', [oracleId, initialValue, description]);
+  
+  const { transaction, hashesToSign } = await Evm.prepareTransactionForSigning({
+    from: senderAddress,
+    to: oracleContractAddress,
+    data,
   });
+
+  return { transaction, hashesToSign, senderAddress };
 }
 
 // Check if oracle already exists
@@ -416,33 +444,112 @@ export async function checkOracleExists(oracleIdString) {
 }
 
 // Set oracle error status
-export async function setOracleError(oracleIdString, errorStatus, signerAddress) {
+export async function setOracleError(oracleIdString, errorStatus, derivationPath) {
   const oracleId = stringToBytes32(oracleIdString);
   
-  const transaction = {
+  // Get the worker account ID (same as wallet-manager.js)
+  const { workerAccountId } = await getAgentAccount();
+  
+  const { address: senderAddress } = await Evm.deriveAddressAndPublicKey(
+    workerAccountId,
+    derivationPath
+  );
+  
+  const data = contract.interface.encodeFunctionData('setOracleError', [oracleId, errorStatus]);
+  
+  const { transaction, hashesToSign } = await Evm.prepareTransactionForSigning({
+    from: senderAddress,
     to: oracleContractAddress,
-    from: signerAddress,
-    data: contract.interface.encodeFunctionData('setOracleError', [oracleId, errorStatus]),
-  };
-
-  return await Evm.signAndSendTransaction({
-    transaction,
-    signerAddress,
+    data,
   });
+
+  return { transaction, hashesToSign, senderAddress };
 }
 
 // Update oracle value
-export async function updateOracle(oracleIdString, newValue, signerAddress) {
+export async function updateOracle(oracleIdString, newValue, derivationPath) {
   const oracleId = stringToBytes32(oracleIdString);
   
-  const transaction = {
+  // Get the worker account ID (same as wallet-manager.js)
+  const { workerAccountId } = await getAgentAccount();
+  
+  const { address: senderAddress } = await Evm.deriveAddressAndPublicKey(
+    workerAccountId,
+    derivationPath
+  );
+  
+  const data = contract.interface.encodeFunctionData('updateOracle', [oracleId, newValue]);
+  
+  const { transaction, hashesToSign } = await Evm.prepareTransactionForSigning({
+    from: senderAddress,
     to: oracleContractAddress,
-    from: signerAddress,
-    data: contract.interface.encodeFunctionData('updateOracle', [oracleId, newValue]),
-  };
-
-  return await Evm.signAndSendTransaction({
-    transaction,
-    signerAddress,
+    data,
   });
+
+  return { transaction, hashesToSign, senderAddress };
+}
+
+// Helper function to sign and broadcast a transaction
+export async function signAndBroadcastTransaction(transaction, hashesToSign, derivationPath) {
+  try {
+    // Sign with the agent
+    const signRes = await signWithAgent(derivationPath, hashesToSign[0]);
+
+	const signature = toRSV(signRes);
+
+	// Convert bytes array to hex string for address recovery
+	const hashHex = `0x${Buffer.from(hashesToSign[0]).toString('hex')}`;
+	
+	const address = await recoverAddress({
+		hash: hashHex,
+		signature: {
+		  r: `0x${signature.r}`,
+		  s: `0x${signature.s}`,
+		  v: signature.v,
+		},
+	  });
+	  
+	  console.log('Recovered address:', address);
+	  console.log('Expected address:', transaction);
+  
+
+	console.log('Sign result:', signRes);
+    
+    // Reconstruct the signed transaction
+    const signedTransaction = Evm.finalizeTransactionSigning({
+      transaction,
+      rsvSignatures: [toRSV(signRes)],
+    });
+
+	// extract sender from signed transaction
+	// 1. Decode the transaction
+	const senderAddress = await recoverTransactionAddress({
+		serializedTransaction: signedTransaction,
+	  });
+
+	// 2. Recover the sender address
+
+	console.log('Recovered address 2:', senderAddress);
+    
+    // Broadcast the signed transaction
+    const txResult = await Evm.broadcastTx(signedTransaction);
+    
+    return txResult;
+  } catch (error) {
+    console.error('Error signing and broadcasting transaction:', error);
+    throw error;
+  }
+}
+
+// Get contract price from a default oracle (for backward compatibility)
+export async function getContractPrice(oracleIdString = 'eth-price') {
+  try {
+    const oracleId = stringToBytes32(oracleIdString);
+    const oracleData = await contract.getOracle(oracleId);
+    return oracleData[0]; // Return the value (first element of the returned array)
+  } catch (error) {
+    console.log('Error getting contract price, returning default:', error);
+    // Return a default value if no oracle exists yet (3000 cents = $30.00)
+    return BigInt(300000); // Default ETH price in cents
+  }
 }
