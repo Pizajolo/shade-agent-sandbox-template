@@ -378,7 +378,7 @@ export async function setOracleError(oracleIdString, errorStatus, derivationPath
   const { workerAccountId } = await getAgentAccount();
   
   const { address: senderAddress } = await Evm.deriveAddressAndPublicKey(
-    workerAccountId,
+    contractId,
     derivationPath
   );
   
@@ -401,7 +401,7 @@ export async function updateOracle(oracleIdString, newValue, derivationPath) {
   const { workerAccountId } = await getAgentAccount();
   
   const { address: senderAddress } = await Evm.deriveAddressAndPublicKey(
-    workerAccountId,
+    contractId,
     derivationPath
   );
   

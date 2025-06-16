@@ -1,6 +1,8 @@
 import { Evm } from './theta';
 import { getAgentAccount } from '@neardefi/shade-agent-js';
 
+const contractId = process.env.NEXT_PUBLIC_contractId;
+
 // Derive oracle wallet from oracle ID
 export async function deriveOracleWallet(oracleId) {
   try {
@@ -8,7 +10,7 @@ export async function deriveOracleWallet(oracleId) {
     const derivationPath = oracleId; // Use oracle ID as derivation path
     
     const { address, publicKey } = await Evm.deriveAddressAndPublicKey(
-      workerAccountId,
+      contractId,
       derivationPath
     );
     

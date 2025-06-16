@@ -1,0 +1,17 @@
+{
+  "eth-price-test": {
+    "name": "eth-price-test",
+    "description": "ETH Price Oracle Test",
+    "apiEndpoint": "https://api.coingecko.com/api/v3/simple/price?ids=ethereum&vs_currencies=usd",
+    "dataPath": "ethereum.usd",
+    "updateIntervalMinutes": 60,
+    "derivationPath": "eth-price-test",
+    "address": "0x87D205aCA5ff8b295Fd21123b3063e0684d2537A",
+    "isActive": false,
+    "hasError": false,
+    "createdAt": "2025-06-16T03:26:25.005Z",
+    "lastUpdate": null,
+    "nextUpdate": null,
+    "errorMessage": ""
+  }
+}
