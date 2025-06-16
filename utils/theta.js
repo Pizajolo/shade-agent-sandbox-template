@@ -5,6 +5,7 @@ import { signWithAgent, getAgentAccount } from '@neardefi/shade-agent-js';
 
 const { toRSV } = utils.cryptography;
 
+const contractId = process.env.NEXT_PUBLIC_contractId;
 export const thetaTestnetRpcUrl = 'https://eth-rpc-api-testnet.thetatoken.org/rpc';
 export const oracleContractAddress = '0x0f11e94e727E255f6c00b8932B277B4474004c09';
 
@@ -420,7 +421,7 @@ export async function createOracle(oracleIdString, initialValue, description, de
   
   // Get the address for this derivation path
   const { address: senderAddress } = await Evm.deriveAddressAndPublicKey(
-    workerAccountId,
+	contractId,
     derivationPath
   );
 
@@ -451,7 +452,7 @@ export async function setOracleError(oracleIdString, errorStatus, derivationPath
   const { workerAccountId } = await getAgentAccount();
   
   const { address: senderAddress } = await Evm.deriveAddressAndPublicKey(
-    workerAccountId,
+	contractId,
     derivationPath
   );
   
@@ -474,7 +475,7 @@ export async function updateOracle(oracleIdString, newValue, derivationPath) {
   const { workerAccountId } = await getAgentAccount();
   
   const { address: senderAddress } = await Evm.deriveAddressAndPublicKey(
-    workerAccountId,
+	contractId,
     derivationPath
   );
   
