@@ -243,7 +243,7 @@ export default function Oracles() {
         </div>
         <div className={styles.configItem}>
           <strong>Wallet Balance:</strong> 
-          <span className={`${styles.balanceValue} ${oracle.walletBalance && parseFloat(oracle.walletBalance) < 0.01 ? styles.lowBalance : ''}`}>
+          <span className={`${styles.balanceValue} ${oracle.walletBalance && parseFloat(oracle.walletBalance) < 0.001 ? styles.lowBalance : ''}`}>
             {oracle.walletBalance ? `${oracle.walletBalance} ETH` : 'Loading...'}
           </span>
         </div>

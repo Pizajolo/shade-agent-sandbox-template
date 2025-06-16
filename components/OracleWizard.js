@@ -95,7 +95,7 @@ export default function OracleWizard({ onComplete, onCancel }) {
         if (!walletInfo) {
           newErrors.wallet = 'Wallet address not generated';
         } else if (!fundingCheck || !fundingCheck.isFunded) {
-          newErrors.funding = 'Wallet must be funded with at least 0.01 ETH before proceeding';
+          newErrors.funding = 'Wallet must be funded with at least 0.001 ETH before proceeding';
         }
         break;
     }
@@ -390,7 +390,7 @@ export default function OracleWizard({ onComplete, onCancel }) {
                 
                 <div className={styles.fundingInstructions}>
                   <p><strong>⚠️ Important:</strong> This wallet needs to be funded with ETH tokens to operate.</p>
-                  <p>Send at least <strong>0.01 ETH</strong> to this address to cover deployment and transaction fees.</p>
+                  <p>Send at least <strong>0.001 ETH</strong> to this address to cover deployment and transaction fees.</p>
                   <a
                     href="https://cloud.google.com/application/web3/faucet/ethereum/sepolia"
                     target="_blank"

@@ -59,15 +59,15 @@ export function getDerivationPath(oracleId) {
 
 /**
  * Check if an oracle's wallet has sufficient balance for operations
- * Minimum balance required is 0.01 ETH to cover gas costs
+ * Minimum balance required is 0.001 ETH to cover gas costs
  * @param {string} oracleId - Oracle identifier
  * @returns {Promise<boolean>} True if wallet has sufficient balance
  */
 export async function checkSufficientBalance(oracleId) {
   try {
     const balance = await getWalletBalance(oracleId);
-    // 0.01 ETH = 10^16 Wei (minimum required balance)
-    const minimumBalance = BigInt('10000000000000000');
+    // 0.001 ETH = 10^16 Wei (minimum required balance)
+    const minimumBalance = BigInt('100000000000000');
     return balance >= minimumBalance;
   } catch (error) {
     console.error('Error checking wallet balance:', error);

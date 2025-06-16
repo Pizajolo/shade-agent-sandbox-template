@@ -89,12 +89,12 @@ export default async function handler(req, res) {
     
     // Check wallet balance before attempting deployment
     const balance = await getWalletBalance(name);
-    const minimumBalance = BigInt('10000000000000000'); // 0.01 ETH in Wei
+    const minimumBalance = BigInt('100000000000000'); // 0.001 ETH in Wei
     
     if (balance < minimumBalance) {
       return res.status(400).json({
         success: false,
-        error: 'Insufficient wallet balance. Please fund the oracle wallet with at least 0.01 ETH before creating the oracle.'
+        error: 'Insufficient wallet balance. Please fund the oracle wallet with at least 0.001 ETH before creating the oracle.'
       });
     }
 

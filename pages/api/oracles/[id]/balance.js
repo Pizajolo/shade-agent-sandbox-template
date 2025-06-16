@@ -21,7 +21,7 @@ import { convertToDecimal } from '../../../../utils/theta.js';
  *   balance: {
  *     raw: string,           // Balance in Wei (as string to avoid BigInt serialization)
  *     eth: string,           // Balance in ETH (formatted)
- *     hasMinimum: boolean    // Whether balance meets 0.01 ETH minimum
+ *     hasMinimum: boolean    // Whether balance meets 0.001 ETH minimum
  *   },
  *   error?: string
  * }
@@ -77,8 +77,8 @@ export default async function handler(req, res) {
     // Convert to ETH for display (18 decimals, show 6 decimal places)
     const balanceEth = convertToDecimal(balanceWei, 18, 6);
     
-    // Check if balance meets minimum requirement (0.01 ETH)
-    const minimumBalance = BigInt('10000000000000000'); // 0.01 ETH in Wei
+    // Check if balance meets minimum requirement (0.001 ETH)
+    const minimumBalance = BigInt('100000000000000'); // 0.001 ETH in Wei
     const hasMinimum = balanceWei >= minimumBalance;
 
     // ========================================================================

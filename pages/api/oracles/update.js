@@ -45,8 +45,8 @@ export default async function handler(req, res) {
       return res.status(400).json({ error: 'Failed to verify oracle creator' });
     }
 
-    // Check wallet balance (minimum 0.01 ETH for gas)
-    const balanceCheck = await checkMinimumBalance(address, 0.01);
+    // Check wallet balance (minimum 0.001 ETH for gas)
+    const balanceCheck = await checkMinimumBalance(address, 0.001);
     if (!balanceCheck.hasMinimum) {
       return res.status(400).json({ 
         error: 'Insufficient balance for gas fees',

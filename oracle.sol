@@ -62,6 +62,8 @@ contract SimpleOracle {
         if (!oracle.exists) {
             revert OracleNotExists();
         }
+
+        require(oracle.creator == msg.sender, "Only creator can update");
         
         // if (oracle.creator != msg.sender) {
         //     revert OnlyCreatorCanUpdate();
